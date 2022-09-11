@@ -1,9 +1,16 @@
 local library = {
-    cache = {},
+    espCache = {},
+    chamsCache = {},
     connections = {},
     settings = {
         enemies = {
             enabled = false,
+            chams = false,
+            chamsdepth = "Occluded",
+            chamscolor = Color3.new(1, 1, 1),
+            chamscoloralpha = 0,
+            chamsoutlinecolor = Color3.new(),
+            chamsoutlinecoloralpha = 0,
             name = false,
             namecolor = Color3.new(1, 1, 1),
             box = false,
@@ -27,6 +34,12 @@ local library = {
         },
         teamates = {
             enabled = false,
+            chams = false,
+            chamsdepth = "Occluded",
+            chamscolor = Color3.new(1, 1, 1),
+            chamscoloralpha = 0,
+            chamsoutlinecolor = Color3.new(),
+            chamsoutlinecoloralpha = 0,
             name = false,
             namecolor = Color3.new(1, 1, 1),
             box = false,
@@ -70,6 +83,7 @@ local vector2New = Vector2.new;
 local vector3New = Vector3.new;
 local cframeNew = CFrame.new;
 local drawingNew = Drawing.new;
+local instanceNew = Instance.new;
 local color3New = Color3.new;
 local mathFloor = math.floor;
 local mathTan = math.tan;
@@ -79,6 +93,7 @@ local cross = vector3New().Cross;
 
 -- services
 local players = getService(game, "Players");
+local coreGui = getService(game, "CoreGui");
 local workspace = getService(game, "Workspace");
 local runService = getService(game, "RunService");
 
@@ -86,6 +101,7 @@ local runService = getService(game, "RunService");
 local currentCamera = workspace.CurrentCamera;
 local localPlayer = players.LocalPlayer;
 local lastScale, lastFov;
+local screenGui = instanceNew("ScreenGui", coreGui);
 
 -- support functions
 local ccWorldToViewportPoint = currentCamera.WorldToViewportPoint;
@@ -125,8 +141,12 @@ local function parseSetting(setting, team)
     return library.settings[library.getTeam(localPlayer) ~= team and "enemies" or "teamates"][setting];
 end
 
+local function isDrawing(type)
+    return type == "Square" or type == "Text" or type == "Triangle"
+end
+
 local function create(type, properties)
-    local object = drawingNew(type);
+    local object = isDrawing(type) and drawingNew(type) or instanceNew(type);
 
     if (properties) then
         for property, value in next, properties do
@@ -174,7 +194,7 @@ function library._getBoxData(depth)
     return width, height;
 end
 
-function library._add(player)
+function library._addEsp(player)
     if (player == localPlayer) then
         return
     end
@@ -227,11 +247,11 @@ function library._add(player)
         })
     };
 
-    library.cache[player] = objects;
+    library.espCache[player] = objects;
 end
 
-function library._remove(player)
-    local objects = library.cache[player];
+function library._removeEsp(player)
+    local objects = library.espCache[player];
 
     if (objects) then
         for index, drawing in next, objects do
@@ -239,25 +259,47 @@ function library._remove(player)
             objects[index] = nil;
         end
 
-        library.cache[player] = nil;
+        library.espCache[player] = nil;
+    end
+end
+
+function library._addChams(player)
+    if (player == localPlayer) then
+        return
+    end
+
+    library.chamsCache[player] = create("Highlight", {
+        Parent = screenGui
+    });
+end
+
+function library._removeChams(player)
+    local highlight = library.chamsCache[player];
+
+    if (highlight) then
+        library.chamsCache[player] = nil;
+        highlight:Destroy();
     end
 end
 
 function library:Load()
     addConnection(players.PlayerAdded, function(player)
-        self._add(player);
+        self._addEsp(player);
+        self._addChams(player);
     end);
 
     addConnection(players.PlayerRemoving, function(player)
-        self._remove(player);
+        self._removeEsp(player);
+        self._removeChams(player);
     end);
 
     for _, player in next, players:GetPlayers() do
-        self._add(player);
+        self._addEsp(player);
+        self._addChams(player);
     end
 
     addConnection(runService.RenderStepped, function()
-        for player, objects in next, self.cache do
+        for player, objects in next, self.espCache do
             local character, torso = self.getCharacter(player);
 
             if (character and torso) then
@@ -367,12 +409,30 @@ function library:Load()
                 end
             end
         end
+
+        for player, highlight in next, self.chamsCache do
+            local team = self.getTeam(player);
+            local character = library.getCharacter(player);
+
+            if (character) then
+                highlight.Enabled = parseSetting("enabled", team) and parseSetting("chams", team);
+                highlight.Adornee = character;
+                highlight.DepthMode = Enum.HighlightDepthMode[parseSetting("chamsdepth", team)];
+                highlight.FillColor = parseSetting("chamscolor", team);
+                highlight.FillTransparency = parseSetting("chamscoloralpha", team);
+                highlight.OutlineColor = parseSetting("chamsoutlinecolor", team);
+                highlight.OutlineTransparency = parseSetting("chamsoutlinecoloralpha", team);
+            else
+                highlight.Enabled = false;
+            end
+        end
     end);
 end
 
 function library:Unload()
     for _, player in next, players:GetPlayers() do
-        self._remove(player);
+        self._removeEsp(player);
+        self._removeChams(player);
     end
     
     for _, connection in next, library.connections do
@@ -380,4 +440,4 @@ function library:Unload()
     end
 end
 
-return setmetatable({}, library)
+return setmetatable({}, library);

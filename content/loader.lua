@@ -6,7 +6,7 @@
     internal logic will result in a global ban, and make you blacklisted from
             every single script that has been licensed with Luauth
 
-            Luauth v2.6 for Roblox, #1 lua whitelisting system by Federal#9999 https://luauth.xyz/
+Luauth v2.6 for Roblox, #1 lua whitelisting system by Federal#9999 https://luauth.xyz/
 
             _____               _            __     ___ 
             | ____|_  _____   __| |_   _ ___  \ \   / / |

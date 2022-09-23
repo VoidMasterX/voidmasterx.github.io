@@ -429,7 +429,7 @@ function library:Load()
             local team = self.getTeam(player);
             local character = self.getCharacter(player);
 
-            if (character and character:IsA("Model")) then
+            if (character and isA(character, "Model")) then
                 highlight.Adornee = character;
                 highlight.Enabled = parseSetting("enabled", team) and parseSetting("chams", team);
                 highlight.DepthMode = Enum.HighlightDepthMode[parseSetting("chamsDepth", team)];

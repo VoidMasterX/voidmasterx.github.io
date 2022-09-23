@@ -1,9 +1,16 @@
 local library = {
     espCache = {},
+    chamsCache = {},
     connections = {},
     settings = {
         enemies = {
             enabled = true,
+            chams = false,
+            chamsDepth = "Occluded",
+            chamsFillColor = Color3.new(1, 0, 0),
+            chamsFillTransparency = 0,
+            chamsOutlineColor = Color3.new(),
+            chamsOutlineTransparency = 0,
             name = false,
             namecolor = Color3.new(1, 1, 1),
             box = false,
@@ -27,6 +34,12 @@ local library = {
         },
         teamates = {
             enabled = false,
+            chams = false,
+            chamsDepth = "Occluded",
+            chamsFillColor = Color3.new(0, 1, 0),
+            chamsFillTransparency = 0,
+            chamsOutlineColor = Color3.new(),
+            chamsOutlineTransparency = 0,
             name = false,
             namecolor = Color3.new(1, 1, 1),
             box = false,
@@ -49,6 +62,7 @@ local library = {
             oofarrowalpha = 1,
         },
         general = {
+            boundingBox = false,
             arrowSize = 15,
             arrowRadius = 150,
             textFont = "Plex",
@@ -61,6 +75,7 @@ library.__index = library;
 
 -- variables
 local getService = game.GetService;
+local isA = game.IsA;
 local findFirstChild = game.FindFirstChild;
 local findFirstChildOfClass = game.FindFirstChildOfClass;
 local tableInsert = table.insert;
@@ -69,6 +84,7 @@ local stringUpper = string.upper;
 local vector2New = Vector2.new;
 local vector3New = Vector3.new;
 local cframeNew = CFrame.new;
+local instanceNew = Instance.new;
 local drawingNew = Drawing.new;
 local color3New = Color3.new;
 local mathFloor = math.floor;
@@ -79,6 +95,7 @@ local cross = vector3New().Cross;
 
 -- services
 local players = getService(game, "Players");
+local coreGui = getService(game, "CoreGui");
 local workspace = getService(game, "Workspace");
 local runService = getService(game, "RunService");
 
@@ -122,11 +139,16 @@ local function parseText(text)
 end
 
 local function parseSetting(setting, team)
-    return library.settings[library.getTeam(localPlayer) ~= team and "enemies" or "teamates"][setting];
+    local localTeam = library.getTeam(localPlayer);
+    return library.settings[localTeam == nil and "enemies" or (localTeam ~= team and "enemies" or "teamates")][setting];
+end
+
+local function isDrawing(type)
+    return type == "Text" or type == "Square" or type == "Triangle"
 end
 
 local function create(type, properties)
-    local object = drawingNew(type);
+    local object = isDrawing(type) and drawingNew(type) or instanceNew(type);
 
     if (properties) then
         for property, value in next, properties do
@@ -156,7 +178,16 @@ function library.getHealth(player, character)
 end
 
 function library.getWeapon(player, character)
-    return "UNKNOWN";
+    return "Hands";
+end
+
+function library._getBoundingBox(character)
+    if (not isA(character, "Model") or not library.settings.general.boundingBox) then
+        return vector2New(4, 5);
+    end
+
+    local _, size = character:GetBoundingBox();
+    return size;
 end
 
 function library._getScaleFactor(fov, depth)
@@ -168,9 +199,10 @@ function library._getScaleFactor(fov, depth)
     return 1 / (lastScale * depth) * 1000;
 end
 
-function library._getBoxData(depth)
+function library._getBoxData(character, depth)
+    local size = library._getBoundingBox(character);
     local scaleFactor = library._getScaleFactor(currentCamera.FieldOfView, depth);
-    local width, height = mathFloor(4 * scaleFactor), mathFloor(5 * scaleFactor);
+    local width, height = mathFloor(size.X * scaleFactor), mathFloor(size.Y * scaleFactor);
     return width, height;
 end
 
@@ -243,17 +275,40 @@ function library._removeEsp(player)
     end
 end
 
+function library._addChams(player)
+    if (player == localPlayer) then
+        return
+    end
+
+    library.chamsCache[player] = create("Highlight", {
+        Parent = coreGui,
+        Enabled = true,
+    });
+end
+
+function library._removeChams(player)
+    local highlight = library.chamsCache[player];
+
+    if (highlight) then
+        library.chamsCache[player] = nil;
+        highlight:Destroy();
+    end
+end
+
 function library:Load()
     addConnection(players.PlayerAdded, function(player)
         self._addEsp(player);
+        self._addChams(player);
     end);
 
     addConnection(players.PlayerRemoving, function(player)
         self._removeEsp(player);
+        self._removeChams(player);
     end);
 
     for _, player in next, players:GetPlayers() do
         self._addEsp(player);
+        self._addChams(player);
     end
 
     addConnection(runService.RenderStepped, function()
@@ -289,7 +344,7 @@ function library:Load()
                 end
 
                 if (canShow) then
-                    local width, height = self._getBoxData(depth);
+                    local width, height = self._getBoxData(character, depth);
                     local x, y = torsoPosition.X, torsoPosition.Y;
                     local boxSize = round(vector2New(width, height));
                     local boxPosition = round(vector2New(x - width * 0.5, y - height * 0.5));
@@ -368,13 +423,33 @@ function library:Load()
             end
         end
     end);
+
+    addConnection(runService.RenderStepped, function()
+        for player, highlight in next, self.chamsCache do
+            local team = self.getTeam(player);
+            local character = self.getCharacter(player);
+
+            if (character and (isA(character, "BasePart") or isA(character, "Model"))) then
+                highlight.Adornee = character;
+                highlight.Enabled = parseSetting("enabled", team) and parseSetting("chams", team);
+                highlight.DepthMode = Enum.HighlightDepthMode[parseSetting("chamsDepth", team)];
+                highlight.FillColor = parseSetting("chamsFillColor", team);
+                highlight.FillTransparency = parseSetting("chamsFillTransparency", team);
+                highlight.OutlineColor = parseSetting("chamsOutlineColor", team);
+                highlight.OutlineTransparency = parseSetting("chamsOutlineTransparency", team);
+            else
+                highlight.Adornee = nil;
+            end
+        end
+    end);
 end
 
 function library:Unload()
     for _, player in next, players:GetPlayers() do
         self._removeEsp(player);
+        self._removeChams(player);
     end
-    
+
     for _, connection in next, library.connections do
         connection:Disconnect();
     end

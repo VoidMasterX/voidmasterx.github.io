@@ -13,7 +13,7 @@ local library = {
             chamsOutlineTransparency = 0,
             name = false,
             namecolor = Color3.new(1, 1, 1),
-            box = false,
+            box = true,
             boxcolor = Color3.new(1, 1, 1),
             boxoutlinecolor = Color3.new(0.1, 0.1, 0.1),
             boxfill = false,
@@ -75,9 +75,9 @@ library.__index = library;
 
 -- variables
 local getService = game.GetService;
-local isA = game.IsA;
 local findFirstChild = game.FindFirstChild;
 local findFirstChildOfClass = game.FindFirstChildOfClass;
+local isA = workspace.IsA;
 local tableInsert = table.insert;
 local stringLower = string.lower;
 local stringUpper = string.upper;

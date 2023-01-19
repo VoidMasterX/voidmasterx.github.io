@@ -344,7 +344,7 @@ local esp = {}; do
         boxFill.Size = size;
         boxFill.Position = position;
 
-        boxOutline.Visible = canShow;
+        boxOutline.Visible = box.Visible;
         boxOutline.Size = size;
         boxOutline.Position = position;
 
@@ -353,7 +353,7 @@ local esp = {}; do
         healthbar.Size = vector2New(hSize.X, -(height * (health / maxHealth)));
         healthbar.Position = hPosition + vector2New(0, height);
 
-        healthbarOutline.Visible = canShow;
+        healthbarOutline.Visible = healthbar.Visible;
         healthbarOutline.Size = hSize + vector2New(2, 2);
         healthbarOutline.Position = hPosition - vector2New(1, 1);
 

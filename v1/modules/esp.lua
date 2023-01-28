@@ -118,7 +118,7 @@ local esp = {}; do
         end
 
         return setmetatable({
-            _id = player.UserId,
+            _id = -player.UserId,
             _objects = {},
             _player = player,
             _soundTransparency = 0

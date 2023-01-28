@@ -1,7 +1,7 @@
 -- localization
 local worldToScreen, getBoundingBox = worldtoscreen, getboundingbox;
 local game, workspace, table, debug, math, cframe, vector2, vector3, color3, instance, drawing, raycastParams = game, workspace, table, debug, math, CFrame, Vector2, Vector3, Color3, Instance, Drawing, RaycastParams;
-local getService, isA, findFirstChild, getChildren = game.GetService, game.IsA, game.FindFirstChild, game.GetChildren;
+local getService, isA, findFirstChild, getChildren, getDescendants = game.GetService, game.IsA, game.FindFirstChild, game.GetChildren, game.GetDescendants;
 local raycast = workspace.Raycast;
 local tableInsert, tableFind, tableClear = table.insert, table.find, table.clear;
 local profileBegin, profileEnd = debug.profilebegin, debug.profileend;
@@ -41,8 +41,7 @@ local function worldToViewportPoint(position)
     return vector2New(screenPosition.X, screenPosition.Y), onScreen, screenPosition.Z;
 end
 
-local function rotateVector(vector, angle)
-    local radian = mathRad(angle);
+local function rotateVector(vector, radian)
     local angleCos, angleSine = mathCos(radian), mathSin(radian);
     return vector2New(angleCos * vector.X - angleSine * vector.Y, angleSine * vector.X + angleCos * vector.Y);
 end
@@ -60,7 +59,7 @@ local library = {
     prioritized = {},
     friended = {},
     settings = {
-        enabled = false,
+        enabled = true,
         visibleOnly = false,
         teamCheck = false,
         prioritizedColor = color3New(1, 1, 0),
@@ -80,26 +79,28 @@ local library = {
         chamsOutlineTransparency = 0,
         sound = false,
         soundColor = color3New(1, 0, 0),
-        names = false,
+        names = true,
         nameColor = color3New(1, 1, 1),
-        boxes = false,
+        teams = true,
+        teamColor = color3New(1, 1, 1),
+        boxes = true,
         boxColor = color3New(1, 0, 0),
         boxType = "Static",
-        boxFill = false,
+        boxFill = true,
         boxFillColor = color3New(1, 0, 0),
         boxFillTransparency = 0.5,
-        skeletons = false,
+        skeletons = true,
         skeletonColor = color3New(1, 1, 1),
-        healthbar = false,
+        healthbar = true,
         healthbarColor = color3New(0, 1, 0.4),
         healthbarSize = 1,
-        healthtext = false,
+        healthtext = true,
         healthtextColor = color3New(1, 1, 1),
-        distance = false,
+        distance = true,
         distanceColor = color3New(1, 1, 1),
-        weapon = false,
+        weapon = true,
         weaponColor = color3New(1, 1, 1),
-        oofArrows = false,
+        oofArrows = true,
         oofArrowsColor = color3New(0.8, 0.2, 0.2),
         oofArrowsAlpha = 1,
         oofArrowsSize = 30,
@@ -166,6 +167,15 @@ local esp = {}; do
             Center = true,
             Outline = true,
             OutlineColor = emptyColor3,
+            Font = font
+        });
+
+        objects.Team = self:Create("Text", {
+            Color = settings.teamColor,
+            Size = 13,
+            Center = true,
+            Outline = true,
+            OutlineColor = color3New(),
             Font = font
         });
 
@@ -240,7 +250,7 @@ local esp = {}; do
             NumSides = 128,
             Radius = 5,
             Filled = true,
-        })
+        });
 
         self._objects = objects;
     end
@@ -327,11 +337,16 @@ local esp = {}; do
         local arrowSize, arrowRadius = settings.oofArrowsSize, settings.oofArrowsRadius;
         local arrowPosition = screenCenter + direction * arrowRadius;
 
-        local name, box, boxFill, boxOutline, healthbar, healthbarOutline, healthtext, distance, weapon, arrow, dot = objects.Name, objects.Box, objects.BoxFill, objects.BoxOutline, objects.Healthbar, objects.HealthbarOutline, objects.Healthtext, objects.Distance, objects.Weapon, objects.Arrow, objects.Dot;
+        local name, team, box, boxFill, boxOutline, healthbar, healthbarOutline, healthtext, distance, weapon, arrow, dot = objects.Name, objects.Team, objects.Box, objects.BoxFill, objects.BoxOutline, objects.Healthbar, objects.HealthbarOutline, objects.Healthtext, objects.Distance, objects.Weapon, objects.Arrow, objects.Dot;
 
         name.Visible = canShow and settings.names;
         name.Color = color or settings.nameColor;
         name.Position = vector2New(x, position.Y - name.TextBounds.Y - 2);
+
+        team.Visible = canShow and settings.teams;
+        team.Text = team ~= nil and team.Name or "No Team";
+        team.Color = settings.teamColor;
+        team.Position = vector2New(x + width * 0.5 + team.TextBounds.X * 0.5 + 2, position.Y - 2);
 
         box.Visible = canShow and settings.boxes;
         box.Color = color or settings.boxColor;
@@ -376,8 +391,8 @@ local esp = {}; do
         arrow.Color = color or settings.oofArrowsColor;
         arrow.Transparency = settings.oofArrowsAlpha;
         arrow.PointA = roundVector(arrowPosition);
-        arrow.PointB = roundVector(arrowPosition - rotateVector(direction, 30) * arrowSize);
-        arrow.PointC = roundVector(arrowPosition - rotateVector(direction, -30) * arrowSize);
+        arrow.PointB = roundVector(arrowPosition - rotateVector(direction, 0.6) * arrowSize);
+        arrow.PointC = roundVector(arrowPosition - rotateVector(direction, -0.6) * arrowSize);
 
         dot.Visible = not canShow and settings.sound;
         dot.Color = color or settings.soundColor;

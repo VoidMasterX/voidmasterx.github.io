@@ -272,7 +272,7 @@ local esp = {}; do
         local cameraCFrame = currentCamera.CFrame;
         local cameraPosition, rootPosition = cameraCFrame.Position, rootPart.Position;
 
-        if (settings.visibleOnly and library._visibleCheck(character, cameraPosition, rootPosition)) then
+        if (settings.visibleOnly and not library._visibleCheck(character, cameraPosition, rootPosition)) then
             return
         end
 

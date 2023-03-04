@@ -1,4 +1,5 @@
 -- localization
+local evo = getgenv().Evo;
 local worldToScreen, getBoundingBox = worldtoscreen, getboundingbox;
 local game, workspace, table, debug, math, cframe, vector2, vector3, color3, instance, drawing, raycastParams = game, workspace, table, debug, math, CFrame, Vector2, Vector3, Color3, Instance, Drawing, RaycastParams;
 local getService, isA, findFirstChild, getChildren, getDescendants = game.GetService, game.IsA, game.FindFirstChild, game.GetChildren, game.GetDescendants;
@@ -59,7 +60,7 @@ local library = {
     prioritized = {},
     friended = {},
     settings = {
-        enabled = true,
+        enabled = false,
         visibleOnly = false,
         teamCheck = false,
         prioritizedColor = color3New(1, 1, 0),
@@ -79,28 +80,28 @@ local library = {
         chamsOutlineTransparency = 0,
         sound = false,
         soundColor = color3New(1, 0, 0),
-        names = true,
+        names = false,
         nameColor = color3New(1, 1, 1),
-        teams = true,
+        teams = false,
         teamColor = color3New(1, 1, 1),
-        boxes = true,
+        boxes = false,
         boxColor = color3New(1, 0, 0),
         boxType = "Static",
-        boxFill = true,
+        boxFill = false,
         boxFillColor = color3New(1, 0, 0),
         boxFillTransparency = 0.5,
-        skeletons = true,
+        skeletons = false,
         skeletonColor = color3New(1, 1, 1),
-        healthbar = true,
+        healthbar = false,
         healthbarColor = color3New(0, 1, 0.4),
         healthbarSize = 1,
-        healthtext = true,
+        healthtext = false,
         healthtextColor = color3New(1, 1, 1),
-        distance = true,
+        distance = false,
         distanceColor = color3New(1, 1, 1),
-        weapon = true,
+        weapon = false,
         weaponColor = color3New(1, 1, 1),
-        oofArrows = true,
+        oofArrows = false,
         oofArrowsColor = color3New(0.8, 0.2, 0.2),
         oofArrowsAlpha = 1,
         oofArrowsSize = 30,
@@ -127,7 +128,7 @@ local esp = {}; do
 
     function esp:Destroy()
         for index, object in next, self._objects do
-            object:Destroy();
+            object:Remove();
             self._objects[index] = nil;
         end
 
@@ -293,6 +294,7 @@ local esp = {}; do
         local direction = vector2New(mathCos(angle), mathSin(angle));
 
         self._character = character;
+        self._team = team;
         self._weapon = library._getWeapon(player, character);
         self._color = tableFind(library.prioritized, playerName) and settings.prioritizedColor or (tableFind(library.friended, playerName) and settings.friendedColor);
         self._screenX = screenPosition.X;
@@ -344,7 +346,7 @@ local esp = {}; do
         name.Position = vector2New(x, position.Y - name.TextBounds.Y - 2);
 
         team.Visible = canShow and settings.teams;
-        team.Text = team ~= nil and team.Name or "No Team";
+        team.Text = self._team ~= nil and self._team.Name or "No Team";
         team.Color = settings.teamColor;
         team.Position = vector2New(x + width * 0.5 + team.TextBounds.X * 0.5 + 2, position.Y - 2);
 
@@ -695,6 +697,12 @@ function library:Unload()
     end
 
     self._initialized = false;
+end
+
+if (evo) then
+    evo.Unloaded:Once(function()
+        library:Unload();
+    end);
 end
 
 return library;

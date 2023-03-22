@@ -283,8 +283,6 @@ local esp = {}; do
             return
         end
 
-        local playerName = player.Name;
-
         local screenPosition, onScreen, depth = worldToViewportPoint(rootPosition);
         local width, height = library._getBoxData(character, depth);
         local health, max = library._getHealth(player, character);
@@ -296,7 +294,7 @@ local esp = {}; do
         self._character = character;
         self._team = team;
         self._weapon = library._getWeapon(player, character);
-        self._color = tableFind(library.prioritized, playerName) and settings.prioritizedColor or (tableFind(library.friended, playerName) and settings.friendedColor);
+        self._color = library.prioritized[player] ~= nil and settings.prioritizedColor or (library.friended[player] ~= nil and settings.friendedColor);
         self._screenX = screenPosition.X;
         self._screenY = screenPosition.Y;
         self._width = width;
@@ -457,10 +455,8 @@ local chams = {}; do
             return
         end
 
-        local playerName = player.Name;
-
         self._character = character;
-        self._color = tableFind(library.prioritized, playerName) and settings.prioritizedColor or (tableFind(library.friended, playerName) and settings.friendedColor);
+        self._color = library.prioritized[player] ~= nil and settings.prioritizedColor or (library.friended[player] ~= nil and settings.friendedColor);
 
         self._render = true;
     end

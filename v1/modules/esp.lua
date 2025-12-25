@@ -159,7 +159,7 @@ local esp = {}; do
 
     function esp:Build()
         local objects, settings = {}, library.settings;
-        local font = worldToScreen and 1 or 2;
+        local font = 4;
 
         objects.Name = self:Create("Text", {
             Color = settings.nameColor,

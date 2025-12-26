@@ -180,6 +180,12 @@ local esp = {}; do
             Font = font
         });
 
+		objects.BoxOutline = self:Create("Square", {
+            Color = emptyColor3,
+            Thickness = 3,
+            Filled = false
+        });
+
         objects.Box = self:Create("Square", {
             Color = settings.boxColor,
             Thickness = 1,
@@ -192,12 +198,6 @@ local esp = {}; do
             Thickness = 1,
             Filled = true
         }, objects.Box.ZIndex + 1);
-
-        objects.BoxOutline = self:Create("Square", {
-            Color = emptyColor3,
-            Thickness = 3,
-            Filled = false
-        });
 
         objects.Healthbar = self:Create("Square", {
             Color = settings.healthbarColor,
